@@ -2,12 +2,20 @@ import os
 import random
 import sys
 
-import Enemy
-import Weapon
-from Player import *
+# I have made a new folder inside called "textrpg" which has __init__.py script
+# This tells python that folder is a module and you can freely import from it
+
+from textrpg import Enemy
+#from textrpg import Weapon
+
+# Never use import *, this will probably give you more trouble than anything
+# Import just object you want to manipulate in this case its Hero, which is an instance of class Player
+from textrpg.Player import Hero 
+
+from textrpg.Weapon import store_weapons
 
 global enemy
-global weapon
+#global weapon
 
 
 def main():
@@ -31,21 +39,34 @@ def start():
     clear()
     print("\nHello, what is your name?")
     Hero.name = input(">> ")
+    Hero.set_up_hero()
     start1()
 
 
 def start1():
-    clear()
+    #clear()
+
+    # There are easyer way to format a string
+
+    #print("\n")
+    #print("Hero Name: %s " % Hero.name)
+    #print("Level: %i " % Hero.level)
+    #print("Experience: %i " % Hero.exp)
+    #print("Health: %i/%i " % (Hero.health, Hero.maxhealth))
+    #print("Gold: %d " % Hero.gold)
+    #print("Potions: %d " % Hero.potions)
+    #print("Attack: %i " % Hero.attack)
+    #print("Weapon: %s " % Hero.curweap)
 
     print("\n")
-    print("Hero Name: %s " % Hero.name)
-    print("Level: %i " % Hero.level)
-    print("Experience: %i " % Hero.exp)
-    print("Health: %i/%i " % (Hero.health, Hero.maxhealth))
-    print("Gold: %d " % Hero.gold)
-    print("Potions: %d " % Hero.potions)
-    print("Attack: %i " % Hero.attack)
-    print("Weapon: %s " % Hero.curweap)
+    print(f"Hero Name: {Hero.name}") 
+    print(f"Level: {Hero.level} ")
+    print(f"Experience: {Hero.exp}")
+    print(f"Health: {Hero.health}/{Hero.maxhealth}")
+    print(f"Gold: {Hero.gold}")
+    print(f"Potions: {Hero.potions}")
+    print(f"Attack: {Hero.attack_value}")
+    print(f"Weapon: {Hero.current_weapon.name}")
 
     print("\n")
     print("1:) Fight")
@@ -83,26 +104,34 @@ def pinventory():
 
 def equip():
     clear()
-    global weapon
+    #global weapon
     print("What do you want to equip?")
-    for weapon in Hero.weap:
-        print("%s " % weapon)
+    for number, weapon in enumerate(Hero.inventory):
+        print(f"{number+1}:) {weapon.name}")
     print("b.) to go back")
     option = input(">> ")
-    if option == Hero.curweap:
+
+    try:
+        option = int(option)
+        option -= 1
+    except ValueError:
+        pass
+
+    if option == Hero.current_weapon:
         print("you already have that weapon equipped")
         input(">> press enter to continue")
         equip()
     elif option == "b":
         pinventory()
-    elif option in Hero.weap:
-        Hero.curweap = option
-        print("You have equipped %s" % option)
+    elif option in range(len(Hero.inventory)):
+        Hero.current_weapon = Hero.inventory[option]
+        Hero.set_attack_value()
+        print(f"You have equipped {Hero.inventory[option].name}")
         input(">> press enter to continue ")
         equip()
     else:
         clear()
-        print("you don't have %s in your inventory" % option)
+        print(f"you don't have {Hero.inventory[option].name} in your inventory")
         input(">> press enter to continue")
         start1()
 
@@ -148,7 +177,7 @@ def fight():
 
 def attack():
     clear()
-    p_attack = random.randint(0, Hero.base_attack + Hero.attack)
+    p_attack = random.randint(0, Hero.base_attack)
     e_attack = random.randint(0, enemy.attack)
 
     if p_attack == 0:
@@ -220,6 +249,7 @@ def run():
 
 def win():
     clear()
+    hero_level = Hero.level
     e_droppotion = random.randint(1, 4)
     e_weapondrop = random.randint(1, 5)
 
@@ -244,8 +274,8 @@ def win():
                     Hero.weap.append(Weapon.SmallKnife.name)
                     print("you found a %s " % Weapon.SmallKnife.name)
 
-    if Hero.level == 2:
-        print("you leveled up to 2!")
+    if hero_level != Hero.level:
+        print(f"you leveled up to {Hero.level}!")
 
     input(">> Press enter to continue")
     start1()
@@ -276,31 +306,52 @@ def store():
     clear()
 
     print("Welcome to the shop!")
-    print("\nType the word of the item you would like to buy")
+    print("\nType the item number you would like to buy")
     print("\nWhat would you like to buy?\n")
 
-    print("Rusty Sword")
-    print("Dagger")
+    for number, item in enumerate(store_weapons):
+        print(f'{number+1}:) {item.name}')
+    #print("Rusty Sword")
+    #print("Dagger")
     print("\nb.) Go Back")
 
     option = input(">> ")
+
+    try:
+        option = int(option)
+        option -= 1
+    except ValueError:
+        pass
+
+
+    
     if option == "b":
         start1()
+    
+    if option in range(len(store_weapons)):
+        print(f'You would like to buy: {store_weapons[option].name}')
+        print(f'Price: {store_weapons[option].value}')
+        print(f'Damage: {store_weapons[option].damage}')
+        yes = input('Type y or n (yes or no): ')
 
-    if option in weapons:
-        if Hero.gold >= weapons[option]:
-            Hero.gold -= weapons[option]
-            print("You have bought %s" % option)
-            input(">> press enter to continue ")
-            Hero.weap.append(option)
-            start1()
+        if yes == 'y':
+            if Hero.gold >= store_weapons[option].value:
+                Hero.gold -= store_weapons[option].value
+                print(f"You have bought {store_weapons[option].name}")
+                input(">> press enter to continue ")
+                Hero.inventory.append(store_weapons[option])
+                start1()
+            else:
+                clear()
+                print("you don't have enough gold")
+                input(">> press enter to continue")
+                store()
         else:
             clear()
-            print("you don't have enough gold")
-            input(">> press enter to continue")
             store()
+
     else:
-        clear()
+        #clear()
         print("That item does not exist")
         input(">> press enter to continue")
         store()
